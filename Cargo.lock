@@ -5191,9 +5191,11 @@ dependencies = [
  "solana-sdk",
  "solana-stake-program",
  "solana-storage-bigtable",
+ "solana-storage-proto",
  "solana-transaction-status",
  "solana-version",
  "solana-vote-program",
+ "thiserror",
  "tikv-jemallocator",
  "tokio",
 ]

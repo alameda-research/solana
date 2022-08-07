@@ -34,7 +34,7 @@ extern crate solana_metrics;
 extern crate serde_derive;
 
 mod access_token;
-mod bigtable;
+pub mod bigtable;
 mod compression;
 mod root_ca_certificate;
 
@@ -76,16 +76,16 @@ fn slot_to_key(slot: Slot) -> String {
     format!("{:016x}", slot)
 }
 
-fn slot_to_blocks_key(slot: Slot) -> String {
+pub fn slot_to_blocks_key(slot: Slot) -> String {
     slot_to_key(slot)
 }
 
-fn slot_to_tx_by_addr_key(slot: Slot) -> String {
+pub fn slot_to_tx_by_addr_key(slot: Slot) -> String {
     slot_to_key(!slot)
 }
 
 // Reverse of `slot_to_key`
-fn key_to_slot(key: &str) -> Option<Slot> {
+pub fn key_to_slot(key: &str) -> Option<Slot> {
     match Slot::from_str_radix(key, 16) {
         Ok(slot) => Some(slot),
         Err(err) => {
@@ -105,11 +105,11 @@ fn key_to_slot(key: &str) -> Option<Slot> {
 // added to ConfirmedBlock, they must either be excluded or set to `default_on_eof` here
 //
 #[derive(Serialize, Deserialize)]
-struct StoredConfirmedBlock {
+pub struct StoredConfirmedBlock {
     previous_blockhash: String,
     blockhash: String,
     parent_slot: Slot,
-    transactions: Vec<StoredConfirmedBlockTransaction>,
+    pub transactions: Vec<StoredConfirmedBlockTransaction>,
     rewards: StoredConfirmedBlockRewards,
     block_time: Option<UnixTimestamp>,
     #[serde(deserialize_with = "default_on_eof")]
@@ -166,7 +166,7 @@ impl From<StoredConfirmedBlock> for ConfirmedBlock {
 }
 
 #[derive(Serialize, Deserialize)]
-struct StoredConfirmedBlockTransaction {
+pub struct StoredConfirmedBlockTransaction {
     transaction: VersionedTransaction,
     meta: Option<StoredConfirmedBlockTransactionStatusMeta>,
 }
@@ -293,8 +293,8 @@ impl From<Reward> for StoredConfirmedBlockReward {
 
 // A serialized `TransactionInfo` is stored in the `tx` table
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct TransactionInfo {
-    slot: Slot, // The slot that contains the block with this transaction in it
+pub struct TransactionInfo {
+    pub slot: Slot, // The slot that contains the block with this transaction in it
     index: u32, // Where the transaction is located in the block
     err: Option<TransactionError>, // None if the transaction executed successfully
     memo: Option<String>, // Transaction memo
@@ -336,7 +336,7 @@ impl From<TransactionInfo> for TransactionStatus {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-struct LegacyTransactionByAddrInfo {
+pub struct LegacyTransactionByAddrInfo {
     pub signature: Signature,          // The transaction signature
     pub err: Option<TransactionError>, // None if the transaction executed successfully
     pub index: u32,                    // Where the transaction is located in the block
@@ -391,7 +391,7 @@ impl Default for LedgerStorageConfig {
 
 #[derive(Clone)]
 pub struct LedgerStorage {
-    connection: bigtable::BigTableConnection,
+    pub connection: bigtable::BigTableConnection,
 }
 
 impl LedgerStorage {

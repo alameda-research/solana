@@ -128,6 +128,27 @@ async fn blocks(
     Ok(())
 }
 
+async fn blocks_with_data(
+    starting_slot: Slot,
+    limit: usize,
+    config: solana_storage_bigtable::LedgerStorageConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let bigtable = solana_storage_bigtable::LedgerStorage::new_with_config(config)
+        .await
+        .map_err(|err| format!("Failed to connect to storage: {:?}", err))?;
+
+    let range = (starting_slot..starting_slot + (limit as u64)).collect::<Vec<Slot>>();
+    let slots: &[Slot] = range.as_slice().try_into().unwrap();
+    let blocks_with_data: Vec<(Slot, ConfirmedBlock)> = bigtable
+        .get_confirmed_blocks_with_data(slots)
+        .await?
+        .collect();
+    println!("{:?}", blocks_with_data);
+    println!("{} blocks found", blocks_with_data.len());
+
+    Ok(())
+}
+
 async fn compare_blocks(
     starting_slot: Slot,
     limit: usize,
@@ -419,6 +440,32 @@ impl BigTableSubCommand for App<'_, '_> {
                         ),
                 )
                 .subcommand(
+                    SubCommand::with_name("blocks-with-data")
+                        .about("Get a list of slots with confirmed blocks for the given range, with data")
+                        .arg(
+                            Arg::with_name("starting_slot")
+                                .long("starting-slot")
+                                .validator(is_slot)
+                                .value_name("SLOT")
+                                .takes_value(true)
+                                .index(1)
+                                .required(true)
+                                .default_value("0")
+                                .help("Start listing at this slot"),
+                        )
+                        .arg(
+                            Arg::with_name("limit")
+                                .long("limit")
+                                .validator(is_slot)
+                                .value_name("LIMIT")
+                                .takes_value(true)
+                                .index(2)
+                                .required(true)
+                                .default_value("1000")
+                                .help("Maximum number of slots to return"),
+                        ),
+                )
+                .subcommand(
                     SubCommand::with_name("compare-blocks")
                         .about("Find the missing confirmed blocks of an owned bigtable for a given range \
                                 by comparing to a reference bigtable")
@@ -634,6 +681,17 @@ pub fn bigtable_process_command(ledger_path: &Path, matches: &ArgMatches<'_>) {
             };
 
             runtime.block_on(blocks(starting_slot, limit, config))
+        }
+        ("blocks-with-data", Some(arg_matches)) => {
+            let starting_slot = value_t_or_exit!(arg_matches, "starting_slot", Slot);
+            let limit = value_t_or_exit!(arg_matches, "limit", usize);
+            let config = solana_storage_bigtable::LedgerStorageConfig {
+                read_only: false,
+                instance_name,
+                ..solana_storage_bigtable::LedgerStorageConfig::default()
+            };
+
+            runtime.block_on(blocks_with_data(starting_slot, limit, config))
         }
         ("compare-blocks", Some(arg_matches)) => {
             let starting_slot = value_t_or_exit!(arg_matches, "starting_slot", Slot);

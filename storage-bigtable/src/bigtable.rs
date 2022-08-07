@@ -748,7 +748,7 @@ impl<F: FnMut(Request<()>) -> InterceptedRequestResult> BigTable<F> {
     }
 }
 
-pub(crate) fn deserialize_protobuf_or_bincode_cell_data<B, P>(
+pub fn deserialize_protobuf_or_bincode_cell_data<B, P>(
     row_data: RowDataSlice,
     table: &str,
     key: RowKey,
